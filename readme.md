@@ -6,4 +6,4 @@ curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
 '''
 3. create a new file or append in file - ~/.vimrc
 4. run `:so %` inside the vimrc
-5. run `:PlugInstall' inside the vimrc
+5. run `:PlugInstall` inside the vimrc
