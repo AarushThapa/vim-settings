@@ -9,4 +9,5 @@ nnoremap fzf :Files<Cr>
 let g:fzf_layout = {'down':'40%'}
 colorscheme morning
 set number
+set relativenumber
 
