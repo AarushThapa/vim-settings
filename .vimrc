@@ -6,6 +6,7 @@ Plug 'prabirshrestha/vim-lsp'
 Plug 'prabirshrestha/asyncomplete.vim'
 Plug 'prabirshrestha/asyncomplete-buffer.vim'
 Plug 'prabirshrestha/asyncomplete-file.vim'
+Plug 'mattn/emmet-vim'
 call plug#end()
 
 nnoremap fzf :Files<CR>
@@ -20,6 +21,23 @@ set shiftwidth=2
 set autoindent
 set smartindent
 set noswapfile
+
+nnoremap <Leader>n :call CreateNewFile()<CR>
+
+function! CreateNewFile()
+  let name = input('Enter file name: ')
+  if name != ''
+    let file_path = expand('%:p:h') . '/' . name
+    if !filereadable(file_path)
+      execute 'edit ' . file_path
+      write
+      echo 'Created new file: ' . file_path
+    else
+      echo 'File already exists: ' . file_path
+    endif
+  endif
+endfunction
+
 
 if executable('pylsp')
   au User lsp_setup call lsp#register_server({
