@@ -22,22 +22,44 @@ set autoindent
 set smartindent
 set noswapfile
 
-nnoremap <Leader>n :call CreateNewFile()<CR>
+nnoremap <Leader>n :call CreateNewFileOrFolder()<CR>
 
-function! CreateNewFile()
-  let name = input('Enter file name: ')
+function! CreateNewFileOrFolder()
+  let name = input('Enter file/folder path (end with / for folder): ')
   if name != ''
-    let file_path = expand('%:p:h') . '/' . name
-    if !filereadable(file_path)
-      execute 'edit ' . file_path
-      write
-      echo 'Created new file: ' . file_path
+    let full_path = expand('%:p:h') . '/' . name
+    let dir_path = fnamemodify(full_path, ':h')
+    
+    " Create parent directories if they don't exist
+    if !isdirectory(dir_path)
+      call mkdir(dir_path, 'p')
+      echo 'Created directory: ' . dir_path
+    endif
+    
+    if name[-1:] == '/'
+      " It's a folder
+      if !isdirectory(full_path)
+        call mkdir(full_path, 'p')
+        echo 'Created folder: ' . full_path
+      else
+        echo 'Folder already exists: ' . full_path
+      endif
     else
-      echo 'File already exists: ' . file_path
+      " It's a file
+      if !filereadable(full_path)
+        execute 'edit ' . full_path
+        write
+        echo 'Created new file: ' . full_path
+      else
+        echo 'File already exists: ' . full_path
+        let open_existing = input('Open existing file? (y/n): ')
+        if open_existing ==? 'y'
+          execute 'edit ' . full_path
+        endif
+      endif
     endif
   endif
 endfunction
-
 
 if executable('pylsp')
   au User lsp_setup call lsp#register_server({
