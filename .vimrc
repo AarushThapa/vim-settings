@@ -1,15 +1,22 @@
 call plug#begin('~/.vim/plugged')
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'dense-analysis/ale'
 Plug 'junegunn/fzf.vim'
 Plug 'tpope/vim-commentary'
 Plug 'prabirshrestha/vim-lsp'
+Plug 'mattn/vim-lsp-settings'
 Plug 'prabirshrestha/asyncomplete.vim'
 Plug 'prabirshrestha/asyncomplete-buffer.vim'
 Plug 'prabirshrestha/asyncomplete-file.vim'
+Plug 'prabirshrestha/asyncomplete-lsp.vim'
 Plug 'mattn/emmet-vim'
+Plug 'preservim/nerdtree'
+Plug 'tpope/vim-surround'
 call plug#end()
 
 nnoremap fzf :Files<CR>
+nnoremap fhf :Rg<CR>
+nnoremap too :ALEToggle<CR>
 nnoremap <C-j> :bn<CR>
 nnoremap <C-k> :bp<CR>
 
@@ -21,45 +28,35 @@ set shiftwidth=2
 set autoindent
 set smartindent
 set noswapfile
+set paste
 
-nnoremap <Leader>n :call CreateNewFileOrFolder()<CR>
 
-function! CreateNewFileOrFolder()
-  let name = input('Enter file/folder path (end with / for folder): ')
-  if name != ''
-    let full_path = expand('%:p:h') . '/' . name
-    let dir_path = fnamemodify(full_path, ':h')
-    
-    " Create parent directories if they don't exist
-    if !isdirectory(dir_path)
-      call mkdir(dir_path, 'p')
-      echo 'Created directory: ' . dir_path
-    endif
-    
-    if name[-1:] == '/'
-      " It's a folder
-      if !isdirectory(full_path)
-        call mkdir(full_path, 'p')
-        echo 'Created folder: ' . full_path
-      else
-        echo 'Folder already exists: ' . full_path
-      endif
-    else
-      " It's a file
-      if !filereadable(full_path)
-        execute 'edit ' . full_path
-        write
-        echo 'Created new file: ' . full_path
-      else
-        echo 'File already exists: ' . full_path
-        let open_existing = input('Open existing file? (y/n): ')
-        if open_existing ==? 'y'
-          execute 'edit ' . full_path
-        endif
-      endif
-    endif
-  endif
-endfunction
+nnoremap <leader>n :NERDTreeFocus<CR>
+nnoremap <C-n> :NERDTree<CR>
+nnoremap <C-t> :NERDTreeToggle<CR>
+nnoremap <C-f> :NERDTreeFind<CR>
+
+inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+inoremap <expr> <cr>    pumvisible() ? asyncomplete#close_popup() : "\<cr>"
+
+call asyncomplete#register_source(asyncomplete#sources#buffer#get_source_options({
+      \ 'name': 'buffer',
+      \ 'allowlist': ['*'],
+      \ 'blocklist': ['go'],
+      \ 'completor': function('asyncomplete#sources#buffer#completor'),
+      \ 'config': {
+      \    'max_buffer_size': 5000000,
+      \  },
+      \ }))
+
+
+au User asyncomplete_setup call asyncomplete#register_source(asyncomplete#sources#file#get_source_options({
+      \ 'name': 'file',
+      \ 'allowlist': ['*'],
+      \ 'priority': 10,
+      \ 'completor': function('asyncomplete#sources#file#completor')
+      \ }))
 
 if executable('pylsp')
   au User lsp_setup call lsp#register_server({
@@ -96,26 +93,12 @@ augroup lsp_install
   autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
 augroup END
 
+nnoremap bpp :bp \| bd #<CR>
+nnoremap fee :messages<CR>
+" let g:lsp_document_highlight_enabled = 1
+let g:lsp_diagnostics_enabled = 0
 
-inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
-inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-inoremap <expr> <cr>    pumvisible() ? asyncomplete#close_popup() : "\<cr>"
-
-call asyncomplete#register_source(asyncomplete#sources#buffer#get_source_options({
-      \ 'name': 'buffer',
-      \ 'allowlist': ['*'],
-      \ 'blocklist': ['go'],
-      \ 'completor': function('asyncomplete#sources#buffer#completor'),
-      \ 'config': {
-      \    'max_buffer_size': 5000000,
-      \  },
-      \ }))
-
-
-
-au User asyncomplete_setup call asyncomplete#register_source(asyncomplete#sources#file#get_source_options({
-      \ 'name': 'file',
-      \ 'allowlist': ['*'],
-      \ 'priority': 10,
-      \ 'completor': function('asyncomplete#sources#file#completor')
-      \ }))
+if executable("rg")
+  set grepprg=rg\ --vimgrep\ --smart-case\ --hidden
+  set grepformat=%f:%l:%c:%m
+endif
